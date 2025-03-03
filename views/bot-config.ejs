@@ -1,0 +1,214 @@
+<%- include('layout', { body: `
+<div class="container mx-auto px-6 py-8">
+    <div class="max-w-3xl mx-auto">
+        <h1 class="text-2xl font-semibold text-gray-800 mb-6">Configurações do Bot</h1>
+        
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <form id="botConfigForm" class="space-y-6">
+                <!-- Online Status -->
+                <div class="flex items-center justify-between">
+                    <div>
+                        <label class="text-gray-700 font-medium">Marcar o número como online?</label>
+                        <p class="text-sm text-gray-500">O bot aparecerá como "online" no WhatsApp</p>
+                    </div>
+                    <div class="relative">
+                        <input type="checkbox" id="markAsOnline" class="sr-only">
+                        <div class="block bg-gray-600 w-14 h-8 rounded-full"></div>
+                        <div class="dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition"></div>
+                    </div>
+                </div>
+
+                <!-- Read Status -->
+                <div class="flex items-center justify-between">
+                    <div>
+                        <label class="text-gray-700 font-medium">Marcar mensagens como visualizadas?</label>
+                        <p class="text-sm text-gray-500">As mensagens aparecerão com check azul</p>
+                    </div>
+                    <div class="relative">
+                        <input type="checkbox" id="markAsRead" class="sr-only">
+                        <div class="block bg-gray-600 w-14 h-8 rounded-full"></div>
+                        <div class="dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition"></div>
+                    </div>
+                </div>
+
+                <!-- Response Delay -->
+                <div class="space-y-4">
+                    <label class="block text-gray-700 font-medium">Delay ao responder</label>
+                    <div class="flex items-center space-x-4">
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="delayType" value="fixed" class="form-radio" checked>
+                            <span class="ml-2">Fixo</span>
+                        </label>
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="delayType" value="random" class="form-radio">
+                            <span class="ml-2">Aleatório</span>
+                        </label>
+                    </div>
+
+                    <div id="fixedDelayInput" class="space-y-2">
+                        <label class="block text-sm text-gray-600">Delay em milissegundos (mín. 500)</label>
+                        <input type="number" min="500" value="500" 
+                            class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                    </div>
+
+                    <div id="randomDelayInput" class="space-y-2 hidden">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm text-gray-600">Mínimo (ms)</label>
+                                <input type="number" min="500" value="500" 
+                                    class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                            </div>
+                            <div>
+                                <label class="block text-sm text-gray-600">Máximo (ms)</label>
+                                <input type="number" min="500" max="4000" value="4000" 
+                                    class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Menu Trigger -->
+                <div class="space-y-4">
+                    <label class="block text-gray-700 font-medium">Bot enviará o menu inicial quando</label>
+                    <select id="menuTrigger" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                        <option value="newChat">A pessoa iniciar uma conversa nova</option>
+                        <option value="message">Quando ele enviar:</option>
+                        <option value="contains">Quando a mensagem dele incluir:</option>
+                    </select>
+
+                    <div id="triggerTextInput" class="hidden">
+                        <label class="block text-sm text-gray-600">Texto específico</label>
+                        <input type="text" class="mt-1 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                    </div>
+                </div>
+
+                <div class="pt-5">
+                    <div class="flex justify-end">
+                        <button type="submit" class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            Salvar Configurações
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Toggle button styles */
+.relative input:checked ~ .block {
+    background-color: #4F46E5;
+}
+.relative input:checked ~ .dot {
+    transform: translateX(100%);
+}
+.dot {
+    transition: transform 0.3s ease-in-out;
+}
+</style>
+
+<script>
+// Load initial configuration
+async function loadConfig() {
+    try {
+        const response = await axios.get('/api/bot-config');
+        const config = response.data;
+
+        // Set toggle switches
+        document.getElementById('markAsOnline').checked = config.markAsOnline;
+        document.getElementById('markAsRead').checked = config.markAsRead;
+
+        // Set delay configuration
+        const delayType = config.responseDelay.type;
+        document.querySelector(\`input[name="delayType"][value="\${delayType}"]\`).checked = true;
+        
+        if (delayType === 'fixed') {
+            document.querySelector('#fixedDelayInput input').value = config.responseDelay.value;
+        } else {
+            document.querySelector('#randomDelayInput input[placeholder="Mínimo"]').value = config.responseDelay.min;
+            document.querySelector('#randomDelayInput input[placeholder="Máximo"]').value = config.responseDelay.max;
+        }
+        toggleDelayInputs(delayType);
+
+        // Set menu trigger
+        document.getElementById('menuTrigger').value = config.menuTrigger.type;
+        if (config.menuTrigger.type !== 'newChat') {
+            document.querySelector('#triggerTextInput input').value = config.menuTrigger.value;
+            document.getElementById('triggerTextInput').classList.remove('hidden');
+        }
+    } catch (error) {
+        console.error('Error loading configuration:', error);
+        alert('Erro ao carregar configurações. Por favor, recarregue a página.');
+    }
+}
+
+// Toggle delay input fields based on selection
+function toggleDelayInputs(type) {
+    const fixedInput = document.getElementById('fixedDelayInput');
+    const randomInput = document.getElementById('randomDelayInput');
+    
+    if (type === 'fixed') {
+        fixedInput.classList.remove('hidden');
+        randomInput.classList.add('hidden');
+    } else {
+        fixedInput.classList.add('hidden');
+        randomInput.classList.remove('hidden');
+    }
+}
+
+// Handle delay type change
+document.querySelectorAll('input[name="delayType"]').forEach(input => {
+    input.addEventListener('change', (e) => {
+        toggleDelayInputs(e.target.value);
+    });
+});
+
+// Handle menu trigger change
+document.getElementById('menuTrigger').addEventListener('change', (e) => {
+    const triggerTextInput = document.getElementById('triggerTextInput');
+    if (e.target.value === 'newChat') {
+        triggerTextInput.classList.add('hidden');
+    } else {
+        triggerTextInput.classList.remove('hidden');
+    }
+});
+
+// Handle form submission
+document.getElementById('botConfigForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const delayType = document.querySelector('input[name="delayType"]:checked').value;
+    const menuTriggerType = document.getElementById('menuTrigger').value;
+
+    const config = {
+        markAsOnline: document.getElementById('markAsOnline').checked,
+        markAsRead: document.getElementById('markAsRead').checked,
+        responseDelay: {
+            type: delayType,
+            ...(delayType === 'fixed' 
+                ? { value: parseInt(document.querySelector('#fixedDelayInput input').value) }
+                : {
+                    min: parseInt(document.querySelector('#randomDelayInput input[placeholder="Mínimo"]').value),
+                    max: parseInt(document.querySelector('#randomDelayInput input[placeholder="Máximo"]').value)
+                }
+            )
+        },
+        menuTrigger: {
+            type: menuTriggerType,
+            value: menuTriggerType === 'newChat' ? '' : document.querySelector('#triggerTextInput input').value
+        }
+    };
+
+    try {
+        await axios.put('/api/bot-config', config);
+        alert('Configurações salvas com sucesso!');
+    } catch (error) {
+        console.error('Error saving configuration:', error);
+        alert('Erro ao salvar configurações. Por favor, tente novamente.');
+    }
+});
+
+// Load initial configuration
+loadConfig();
+</script>
+` }) %>
