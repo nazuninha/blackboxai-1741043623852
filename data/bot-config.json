@@ -1,0 +1,12 @@
+{
+  "markAsOnline": true,
+  "markAsRead": true,
+  "responseDelay": {
+    "type": "fixed",
+    "value": 500
+  },
+  "menuTrigger": {
+    "type": "newChat",
+    "value": ""
+  }
+}
