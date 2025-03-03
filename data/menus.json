@@ -1,0 +1,27 @@
+[
+  {
+    "name": "Menu Principal",
+    "type": "sub",
+    "text": "Olá! Bem-vindo ao atendimento automatizado.\n\n1. Informações\n2. Suporte\n3. Falar com Atendente",
+    "ative": false,
+    "submenus": [
+      {
+        "name": "Informações",
+        "type": "sub",
+        "text": "Selecione uma opção:\n\n1. Horário de Funcionamento\n2. Endereço\n3. Voltar",
+        "ative": false,
+        "submenus": [],
+        "back": "0"
+      },
+      {
+        "name": "Suporte",
+        "type": "sub",
+        "text": "Como posso ajudar?\n\n1. Problemas Técnicos\n2. Dúvidas Gerais\n3. Voltar",
+        "ative": false,
+        "submenus": [],
+        "back": "0"
+      }
+    ],
+    "back": false
+  }
+]
