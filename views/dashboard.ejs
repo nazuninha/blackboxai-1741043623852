@@ -1,0 +1,158 @@
+<%- include('layout', { body: `
+<div class="container mx-auto px-6 py-8">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <!-- Metrics Cards -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex items-center">
+                <div class="p-3 rounded-full bg-indigo-100">
+                    <i class="fas fa-envelope text-indigo-500"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-gray-500 text-sm">Mensagens Enviadas</p>
+                    <p class="text-2xl font-semibold text-gray-700" id="messagesPerDay">0</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex items-center">
+                <div class="p-3 rounded-full bg-green-100">
+                    <i class="fas fa-comments text-green-500"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-gray-500 text-sm">Chats Interagidos</p>
+                    <p class="text-2xl font-semibold text-gray-700" id="chatsInteracted">0</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex items-center">
+                <div class="p-3 rounded-full bg-blue-100">
+                    <i class="fas fa-list text-blue-500"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-gray-500 text-sm">Menus Ativos</p>
+                    <p class="text-2xl font-semibold text-gray-700" id="activeMenus">0</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex items-center">
+                <div class="p-3 rounded-full bg-purple-100">
+                    <i class="fas fa-sitemap text-purple-500"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-gray-500 text-sm">Submenus</p>
+                    <p class="text-2xl font-semibold text-gray-700" id="submenus">0</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity Section -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">Atividade Recente</h2>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead>
+                    <tr>
+                        <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Número
+                        </th>
+                        <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Status
+                        </th>
+                        <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Última Atividade
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200" id="recentActivity">
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-gray-500" colspan="3">
+                            Carregando atividades...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+async function loadMetrics() {
+    try {
+        const response = await axios.get('/api/metrics');
+        const metrics = response.data;
+        
+        document.getElementById('messagesPerDay').textContent = metrics.messagesPerDay;
+        document.getElementById('chatsInteracted').textContent = metrics.chatsInteracted;
+        document.getElementById('activeMenus').textContent = metrics.activeMenus;
+        document.getElementById('submenus').textContent = metrics.submenus;
+    } catch (error) {
+        console.error('Error loading metrics:', error);
+    }
+}
+
+async function loadRecentActivity() {
+    try {
+        const response = await axios.get('/api/active-numbers');
+        const numbers = response.data;
+        const activityTable = document.getElementById('recentActivity');
+        
+        if (numbers.length === 0) {
+            activityTable.innerHTML = \`
+                <tr>
+                    <td class="px-6 py-4 whitespace-nowrap text-gray-500" colspan="3">
+                        Nenhuma atividade recente
+                    </td>
+                </tr>
+            \`;
+            return;
+        }
+
+        activityTable.innerHTML = numbers.map(number => \`
+            <tr>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0 h-10 w-10">
+                            <img class="h-10 w-10 rounded-full" src="\${number.photo}" alt="">
+                        </div>
+                        <div class="ml-4">
+                            <div class="text-sm font-medium text-gray-900">\${number.name}</div>
+                            <div class="text-sm text-gray-500">\${number.number}</div>
+                        </div>
+                    </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full \${
+                        number.status === 'online' 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-red-100 text-red-800'
+                    }">
+                        \${number.status}
+                    </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    Há 5 minutos
+                </td>
+            </tr>
+        \`).join('');
+    } catch (error) {
+        console.error('Error loading recent activity:', error);
+    }
+}
+
+// Load initial data
+loadMetrics();
+loadRecentActivity();
+
+// Refresh data every 30 seconds
+setInterval(() => {
+    loadMetrics();
+    loadRecentActivity();
+}, 30000);
+</script>
+` }) %>
