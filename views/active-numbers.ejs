@@ -1,0 +1,207 @@
+<%- include('layout', { body: `
+<div class="container mx-auto px-6 py-8">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-semibold text-gray-800">Números Ativos</h1>
+        <button onclick="showAddNumberModal()" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <i class="fas fa-plus mr-2"></i>Conectar Número
+        </button>
+    </div>
+
+    <!-- Numbers List -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="numbersList">
+        <!-- Numbers will be loaded here -->
+    </div>
+
+    <!-- Add Number Modal -->
+    <div id="addNumberModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div id="step1" class="modal-step">
+                <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Adicionar Novo Número</h3>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="phoneNumber">
+                        Número de Telefone
+                    </label>
+                    <input type="tel" id="phoneNumber" 
+                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                        placeholder="+55 (11) 99999-9999"
+                        pattern="\\+[0-9]{2}\\s?\\([0-9]{2}\\)\\s?[0-9]{5}-[0-9]{4}">
+                    <p class="text-gray-600 text-xs italic mt-1">Formato: +55 (11) 99999-9999</p>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="phoneName">
+                        Nome do Número
+                    </label>
+                    <input type="text" id="phoneName" 
+                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                        placeholder="Ex: Bot Principal">
+                </div>
+                <div class="flex justify-end">
+                    <button onclick="closeAddNumberModal()" class="mr-2 px-4 py-2 text-gray-500 hover:text-gray-700">
+                        Cancelar
+                    </button>
+                    <button onclick="generateCode()" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">
+                        Gerar Código
+                    </button>
+                </div>
+            </div>
+
+            <div id="step2" class="modal-step hidden">
+                <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Código de Conexão</h3>
+                <div class="mb-4 text-center">
+                    <div class="bg-gray-100 p-4 rounded-lg mb-4">
+                        <span id="connectionCode" class="text-2xl font-mono font-bold text-indigo-600"></span>
+                    </div>
+                    <p class="text-gray-600 text-sm mb-4">
+                        1. Abra o WhatsApp no seu celular<br>
+                        2. Acesse Configurações > WhatsApp Web<br>
+                        3. Clique em "Conectar com código"<br>
+                        4. Digite o código acima
+                    </p>
+                </div>
+                <div class="flex justify-end">
+                    <button onclick="closeAddNumberModal()" class="mr-2 px-4 py-2 text-gray-500 hover:text-gray-700">
+                        Cancelar
+                    </button>
+                    <button onclick="confirmConnection()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                        Conectei
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentNumber = null;
+
+function showAddNumberModal() {
+    document.getElementById('addNumberModal').classList.remove('hidden');
+    document.getElementById('step1').classList.remove('hidden');
+    document.getElementById('step2').classList.add('hidden');
+}
+
+function closeAddNumberModal() {
+    document.getElementById('addNumberModal').classList.add('hidden');
+    currentNumber = null;
+}
+
+async function generateCode() {
+    const phoneNumber = document.getElementById('phoneNumber').value;
+    const phoneName = document.getElementById('phoneName').value;
+
+    if (!phoneNumber || !phoneName) {
+        alert('Por favor, preencha todos os campos.');
+        return;
+    }
+
+    if (!phoneNumber.match(/\\+[0-9]{2}\\s?\\([0-9]{2}\\)\\s?[0-9]{5}-[0-9]{4}/)) {
+        alert('Por favor, insira um número de telefone válido no formato correto.');
+        return;
+    }
+
+    try {
+        const response = await axios.post('/api/bot/code-gen');
+        document.getElementById('connectionCode').textContent = response.data.code;
+        currentNumber = { number: phoneNumber, name: phoneName };
+        
+        document.getElementById('step1').classList.add('hidden');
+        document.getElementById('step2').classList.remove('hidden');
+    } catch (error) {
+        console.error('Error generating code:', error);
+        alert('Erro ao gerar código. Por favor, tente novamente.');
+    }
+}
+
+async function confirmConnection() {
+    if (!currentNumber) return;
+
+    try {
+        await axios.post('/api/numbers', currentNumber);
+        closeAddNumberModal();
+        loadNumbers();
+    } catch (error) {
+        console.error('Error adding number:', error);
+        alert('Erro ao adicionar número. Por favor, tente novamente.');
+    }
+}
+
+async function toggleNumberStatus(id, currentStatus) {
+    try {
+        const newStatus = currentStatus === 'online' ? 'offline' : 'online';
+        await axios.put(\`/api/numbers/\${id}/status\`, { status: newStatus });
+        loadNumbers();
+    } catch (error) {
+        console.error('Error toggling status:', error);
+        alert('Erro ao alterar status. Por favor, tente novamente.');
+    }
+}
+
+async function deleteNumber(id) {
+    if (!confirm('Tem certeza que deseja apagar este número?')) return;
+
+    try {
+        await axios.delete(\`/api/numbers/\${id}\`);
+        loadNumbers();
+    } catch (error) {
+        console.error('Error deleting number:', error);
+        alert('Erro ao apagar número. Por favor, tente novamente.');
+    }
+}
+
+async function loadNumbers() {
+    try {
+        const response = await axios.get('/api/active-numbers');
+        const numbers = response.data;
+        const numbersList = document.getElementById('numbersList');
+
+        if (numbers.length === 0) {
+            numbersList.innerHTML = \`
+                <div class="col-span-full flex flex-col items-center justify-center p-8 bg-white rounded-lg shadow">
+                    <div class="text-6xl mb-4">😢</div>
+                    <h3 class="text-xl font-semibold text-gray-800 mb-2">Nenhum número ativo</h3>
+                    <p class="text-gray-600">Clique em "Conectar Número" para adicionar um novo número.</p>
+                </div>
+            \`;
+            return;
+        }
+
+        numbersList.innerHTML = numbers.map(number => \`
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex items-center mb-4">
+                    <img src="\${number.photo}" alt="\${number.name}" class="w-12 h-12 rounded-full mr-4">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-800">\${number.name}</h3>
+                        <p class="text-gray-600">\${number.number}</p>
+                    </div>
+                    <div class="ml-auto flex items-center">
+                        <span class="w-3 h-3 rounded-full \${
+                            number.status === 'online' ? 'bg-green-500' : 'bg-red-500'
+                        } mr-2"></span>
+                        <span class="text-sm text-gray-600">\${number.status}</span>
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-2">
+                    <button onclick="toggleNumberStatus('\${number.id}', '\${number.status}')"
+                        class="\${
+                            number.status === 'online' 
+                                ? 'bg-red-600 hover:bg-red-700' 
+                                : 'bg-green-600 hover:bg-green-700'
+                        } text-white px-3 py-1 rounded text-sm">
+                        \${number.status === 'online' ? 'Desligar' : 'Ligar'}
+                    </button>
+                    <button onclick="deleteNumber('\${number.id}')"
+                        class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded text-sm">
+                        Apagar
+                    </button>
+                </div>
+            </div>
+        \`).join('');
+    } catch (error) {
+        console.error('Error loading numbers:', error);
+    }
+}
+
+// Load initial data
+loadNumbers();
+</script>
+` }) %>
