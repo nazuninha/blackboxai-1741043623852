@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Bot Manager</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        .sidebar {
+            transition: transform 0.3s ease-in-out;
+        }
+        .sidebar.closed {
+            transform: translateX(-100%);
+        }
+        .main-content {
+            transition: margin-left 0.3s ease-in-out;
+        }
+        .main-content.sidebar-open {
+            margin-left: 250px;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <% if (typeof hideNav === 'undefined' || !hideNav) { %>
+    <!-- Sidebar -->
+    <div class="sidebar closed fixed top-0 left-0 h-full w-64 bg-gray-800 text-white z-50">
+        <div class="p-4">
+            <button id="closeSidebar" class="float-right text-white">
+                <i class="fas fa-times"></i>
+            </button>
+            <h2 class="text-xl font-bold mb-6">Menu</h2>
+            <nav>
+                <a href="/dashboard" class="block py-2 px-4 hover:bg-gray-700 rounded mb-2">
+                    <i class="fas fa-home mr-2"></i> Dashboard
+                </a>
+                <a href="/active-numbers" class="block py-2 px-4 hover:bg-gray-700 rounded mb-2">
+                    <i class="fas fa-phone mr-2"></i> Ativar Número
+                </a>
+                <a href="/bot-config" class="block py-2 px-4 hover:bg-gray-700 rounded mb-2">
+                    <i class="fas fa-cog mr-2"></i> Configurar Bot
+                </a>
+                <a href="/menus" class="block py-2 px-4 hover:bg-gray-700 rounded mb-2">
+                    <i class="fas fa-list mr-2"></i> Configurar Menus
+                </a>
+                <a href="/logout" class="block py-2 px-4 hover:bg-gray-700 rounded mt-8 text-red-400">
+                    <i class="fas fa-sign-out-alt mr-2"></i> Sair
+                </a>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="bg-white shadow-md">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <button id="openSidebar" class="text-gray-800">
+                    <i class="fas fa-bars text-xl"></i>
+                </button>
+                <h1 class="text-xl font-bold text-gray-800">WhatsApp Bot Manager</h1>
+                <div></div>
+            </div>
+        </div>
+    </header>
+    <% } %>
+
+    <!-- Main Content -->
+    <div class="main-content min-h-screen">
+        <%- body %>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white shadow-md mt-8">
+        <div class="container mx-auto px-6 py-4">
+            <p class="text-center text-gray-600">Developed by hiudy</p>
+        </div>
+    </footer>
+
+    <script>
+        const sidebar = document.querySelector('.sidebar');
+        const mainContent = document.querySelector('.main-content');
+        const openSidebarBtn = document.getElementById('openSidebar');
+        const closeSidebarBtn = document.getElementById('closeSidebar');
+
+        if (openSidebarBtn && closeSidebarBtn) {
+            openSidebarBtn.addEventListener('click', () => {
+                sidebar.classList.remove('closed');
+                mainContent.classList.add('sidebar-open');
+            });
+
+            closeSidebarBtn.addEventListener('click', () => {
+                sidebar.classList.add('closed');
+                mainContent.classList.remove('sidebar-open');
+            });
+        }
+    </script>
+    <%- typeof scripts !== 'undefined' ? scripts : '' %>
+</body>
+</html>
